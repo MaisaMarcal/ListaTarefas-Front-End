@@ -1,39 +1,56 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import api from "./services/api";
 
 const tarefas = ref([]);
 const novaTarefa = ref("");
 
-const carregarTarefas = async () => {
-  const response = await api.get("/tarefas");
-  tarefas.value = response.data;
+const salvarLocalStorage = () => {
+  localStorage.setItem(
+    "tarefas",
+    JSON.stringify(tarefas.value)
+  );
 };
 
-const criarTarefa = async () => {
+const carregarTarefas = () => {
+
+  const tarefasSalvas =
+    localStorage.getItem("tarefas");
+
+  if (tarefasSalvas) {
+    tarefas.value = JSON.parse(tarefasSalvas);
+  }
+};
+
+const criarTarefa = () => {
+
   if (!novaTarefa.value.trim()) return;
 
-  await api.post("/tarefas", {
+  tarefas.value.push({
+    id: Date.now(),
     text: novaTarefa.value,
+    status: "PENDENTE",
   });
 
   novaTarefa.value = "";
-  carregarTarefas();
+
+  salvarLocalStorage();
 };
 
-const moverStatus = async (tarefa, novoStatus) => {
-  await api.put(`/tarefas/${tarefa.id}`, {
-    text: tarefa.text,
-    completed: tarefa.completed,
-    status: novoStatus,
-  });
+const moverStatus = (tarefa, novoStatus) => {
 
-  carregarTarefas();
+  tarefa.status = novoStatus;
+
+  salvarLocalStorage();
 };
 
-const excluir = async (id) => {
-  await api.delete(`/tarefas/${id}`);
-  carregarTarefas();
+const excluir = (id) => {
+
+  tarefas.value =
+    tarefas.value.filter(
+      tarefa => tarefa.id !== id
+    );
+
+  salvarLocalStorage();
 };
 
 onMounted(() => {
@@ -46,7 +63,10 @@ onMounted(() => {
     <h1>Meu Kanban Vue</h1>
 
     <div class="input-area">
-      <input v-model="novaTarefa" placeholder="Digite uma nova tarefa..." />
+      <input
+        v-model="novaTarefa"
+        placeholder="Digite uma nova tarefa..."
+      />
 
       <button @click="criarTarefa">
         Criar
@@ -57,7 +77,10 @@ onMounted(() => {
 
       <!-- PENDENTE -->
       <div class="coluna">
-        <h2>🕓 Pendentes</h2>
+        <h2>
+          🕓 Pendentes
+          ({{ tarefas.filter(t => t.status === 'PENDENTE').length }})
+        </h2>
 
         <div
           v-for="tarefa in tarefas.filter(t => t.status === 'PENDENTE')"
@@ -86,7 +109,10 @@ onMounted(() => {
 
       <!-- EXECUÇÃO -->
       <div class="coluna">
-        <h2>⚡ Em Execução</h2>
+        <h2>
+          ⚡ Em Execução
+          ({{ tarefas.filter(t => t.status === 'EM_EXECUCAO').length }})
+        </h2>
 
         <div
           v-for="tarefa in tarefas.filter(t => t.status === 'EM_EXECUCAO')"
@@ -96,19 +122,31 @@ onMounted(() => {
           <p>{{ tarefa.text }}</p>
 
           <div class="acoes">
+
+            <button
+              class="primary"
+              @click="moverStatus(tarefa, 'PENDENTE')"
+            >
+              Voltar
+            </button>
+
             <button
               class="success"
               @click="moverStatus(tarefa, 'CONCLUIDO')"
             >
               Concluir
             </button>
+
           </div>
         </div>
       </div>
 
       <!-- CONCLUÍDO -->
       <div class="coluna">
-        <h2>✅ Concluídas</h2>
+        <h2>
+          ✅ Concluídas
+          ({{ tarefas.filter(t => t.status === 'CONCLUIDO').length }})
+        </h2>
 
         <div
           v-for="tarefa in tarefas.filter(t => t.status === 'CONCLUIDO')"
@@ -116,6 +154,24 @@ onMounted(() => {
           class="card concluido"
         >
           <p>{{ tarefa.text }}</p>
+
+          <div class="acoes">
+
+            <button
+              class="primary"
+              @click="moverStatus(tarefa, 'EM_EXECUCAO')"
+            >
+              Reabrir
+            </button>
+
+            <button
+              class="danger"
+              @click="excluir(tarefa.id)"
+            >
+              Excluir
+            </button>
+
+          </div>
         </div>
       </div>
 
