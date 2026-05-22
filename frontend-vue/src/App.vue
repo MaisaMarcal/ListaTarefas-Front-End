@@ -1,56 +1,79 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import api from "./services/api";
 
 const tarefas = ref([]);
 const novaTarefa = ref("");
 
-const salvarLocalStorage = () => {
-  localStorage.setItem(
-    "tarefas",
-    JSON.stringify(tarefas.value)
-  );
-};
+// LISTAR
+const carregarTarefas = async () => {
 
-const carregarTarefas = () => {
+  try {
 
-  const tarefasSalvas =
-    localStorage.getItem("tarefas");
+    const response = await api.get("/tarefas");
 
-  if (tarefasSalvas) {
-    tarefas.value = JSON.parse(tarefasSalvas);
+    tarefas.value = response.data;
+
+  } catch (error) {
+
+    console.error(error);
   }
 };
 
-const criarTarefa = () => {
+// CRIAR
+const criarTarefa = async () => {
 
   if (!novaTarefa.value.trim()) return;
 
-  tarefas.value.push({
-    id: Date.now(),
-    text: novaTarefa.value,
-    status: "PENDENTE",
-  });
+  try {
 
-  novaTarefa.value = "";
+    await api.post("/tarefas", {
+      text: novaTarefa.value,
+      status: "PENDENTE"
+    });
 
-  salvarLocalStorage();
+    novaTarefa.value = "";
+
+    carregarTarefas();
+
+  } catch (error) {
+
+    console.error(error);
+  }
 };
 
-const moverStatus = (tarefa, novoStatus) => {
+// MOVER STATUS
+const moverStatus = async (tarefa, novoStatus) => {
 
-  tarefa.status = novoStatus;
+  try {
 
-  salvarLocalStorage();
+    await api.put(`/tarefas/${tarefa.id}`, {
+      id: tarefa.id,
+      text: tarefa.text,
+      status: novoStatus
+    });
+
+    carregarTarefas();
+
+  } catch (error) {
+
+    console.error(error);
+  }
 };
 
-const excluir = (id) => {
+// EXCLUIR
+const excluir = async (id) => {
 
-  tarefas.value =
-    tarefas.value.filter(
-      tarefa => tarefa.id !== id
-    );
+  try {
 
-  salvarLocalStorage();
+    await api.delete(`/tarefas/${id}`);
+
+    carregarTarefas();
+
+  } catch (error) {
+
+    console.error(error);
+  }
 };
 
 onMounted(() => {
@@ -198,8 +221,6 @@ body {
   min-height: 100vh;
 }
 
-/* CONTAINER */
-
 .container {
   width: 100%;
   min-height: 100vh;
@@ -211,8 +232,6 @@ body {
 
   padding: 40px;
 }
-
-/* TÍTULO */
 
 h1 {
   font-size: 4rem;
@@ -232,8 +251,6 @@ h1 {
 
   letter-spacing: -3px;
 }
-
-/* INPUT */
 
 .input-area {
   width: 100%;
@@ -304,8 +321,6 @@ h1 {
   transform: translateY(-3px);
 }
 
-/* KANBAN */
-
 .kanban {
   width: 100%;
 
@@ -315,8 +330,6 @@ h1 {
 
   gap: 30px;
 }
-
-/* COLUNAS */
 
 .coluna {
   width: 390px;
@@ -349,8 +362,6 @@ h1 {
 
   margin-bottom: 28px;
 }
-
-/* CARDS */
 
 .card {
   position: relative;
@@ -409,8 +420,6 @@ h1 {
   color: #f8fafc;
 }
 
-/* AÇÕES */
-
 .acoes {
   display: flex;
   gap: 10px;
@@ -438,8 +447,6 @@ h1 {
   transform: scale(1.05);
 }
 
-/* BOTÕES */
-
 .primary {
   background: linear-gradient(
     135deg,
@@ -466,13 +473,9 @@ h1 {
   color: #f8fafc;
 }
 
-/* CONCLUÍDO */
-
 .concluido {
   opacity: 0.85;
 }
-
-/* RESPONSIVO */
 
 @media (max-width: 1400px) {
   .kanban {
