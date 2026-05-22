@@ -13,3 +13,5 @@ const api = axios.create({
 });
 
 export default api;*/
+
+//npm run dev -- --host
