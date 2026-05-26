@@ -9,9 +9,7 @@ const api = axios.create({
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://192.168.0.15:8088",
+  baseURL: "http://10.74.241.110:8088",
 });
 
 export default api;
-
-//npm run dev -- --host
